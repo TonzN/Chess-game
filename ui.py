@@ -270,3 +270,83 @@ class image():
         self.screen.blit(self.img, self.pos)
 
 class grid: 
+    def __init__(self, size, cellsize, pattern = True):
+        self.colors = [
+            (255,255,255),
+            (222,184,135)
+        ]
+        self.pattern = pattern
+        self.cellSize = cellsize
+        self.border = False 
+        self.borderThickness = 2 
+        self.spacing = 0 #spacing between each cell
+        self.borderColor = (20,20,20)
+        self._screenW = int(np.floor(size[0]/cellsize))
+        self._screenH = int(np.floor(size[1]/cellsize))
+        self._pos = np.zeros((self._screenW, self._screenH))
+        self.renderqueue = MainRenderQueue
+        self.rounded_edges = False
+        self.render = True
+
+        self.grid = [[] for i in range(int(np.floor(size[1]/cellsize)))] #makes the grid layout
+        self.grid_data = {} # Data for grid management 
+
+        self.colorHistory = [] 
+
+        self.regionColorHistory = {}  #Access regions color history
+
+    def generate(self, screen, type = "Button", textdata = None):
+        for i in range(self._screenH):
+            for z in range(self._screenW):
+                color = self.colors[0]
+                if (i+z)%2==0 and self.pattern == True: #makes checker patternsS
+                    color = self.colors[1]
+
+               #Type = Button
+                block = Button(screen, z*self.cellSize + (1+z)*self.spacing, i*self.cellSize + (1+i)*self.spacing, self.cellSize, self.cellSize, color, color)
+                block.Render = self.render
+                if self.border:
+                    block.Border = True
+                    block.BorderColor = self.borderColor
+                    block.borderThickness = self.borderThickness
+
+                if self.rounded_edges:
+                    block.rounded_edges = True
+        
+                if type == "TextButton":
+                    block.AddText(textdata[0], textdata[1], textdata[2])
+
+            
+                self.grid[i].append(block)
+    
+    def colorRegion(self, region, colour): #For manually changing a region of colors
+        for x in range(region[1][0], region[1][1]):
+            for z in range(region[0][0], region[0][1]): #on the x axis
+                self.grid[x][z].c1 = colour
+        self.colorHistory.append(region)
+    
+    def colorBlock(self, pos, colour): #pos gotta be the indexes of the grid formated in a tuple
+        self.grid[pos[1]][pos[0]].c1 = colour
+
+
+    def refreshColours(self):
+        for region in self.colorHistory:
+          for x in range(region[1][0], region[1][1]): #Y axis
+            for z in range(region[0][0], region[0][1]): #on the x axis
+                self.grid[x][z].c1 = (self.colors[0])
+        
+        self.colorHistory = []
+    
+    def refreshRegion(self, region, oldColors = False): #refresh a region of cells region --> key 
+        if not oldColors: #so you can revert to default colorS
+            oldColors = (self.colors[0])
+        for i in self.regionColorHistory[region]:
+            self.grid[i[1]][i[0]].c1 = (oldColors) 
+    
+    def refreshBlock(self, pos):    
+        self.grid[pos[1]][pos[0]].c1 = (self.colors[0])
+
+    def get_zero_grid(self, fill = False):
+        empty_grid = np.zeros((len(self.grid[0]), len(self.grid)))
+                   
+        return empty_grid
