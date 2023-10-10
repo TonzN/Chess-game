@@ -16,7 +16,7 @@ grid = ui.grid(window_size, 60)
 grid.generate(screen)
 
 game = cl.Game(screen)
-game.setup(grid.grid, 60, True)
+game.setup(grid.grid, 60, False)
 game.loadPawns()
 game.loadPieces()
 
