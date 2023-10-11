@@ -43,45 +43,21 @@ while run:
                 if selected_piece+new_uci_pos == str(i):
                     is_legal_move = True
             
-            if is_legal_move == True: 
-                print(selected_piece+new_uci_pos)
+           if is_legal_move == True: 
                 move = selected_piece+new_uci_pos  #assigns move   
                 uci_move = chess.Move.from_uci(move)    
-            
-                #capture    
-                if board.piece_at(uci_move.to_square):
-                    ui.MainRenderQueue.Remove(game.pieces[new_uci_pos].img)
-                    del game.pieces[new_uci_pos]
+               
+                #checks what kind of move you did
+                game.capture(board, uci_move, new_uci_pos)
+                game.en_passant(board, uci_move)          
+                game.castle(board, uci_move)
+                game.move(move)
                 
-                #en passant
-                if board.is_en_passant(uci_move):
-                    ui.MainRenderQueue.Remove(game.pieces[game.last_move].img)
-                
-                #castle
-                if board.is_castling(uci_move):
-                    new_file = chess.square_file(uci_move.to_square)
-                    curr_file = chess.square_file(uci_move.from_square)
-                    #castling dir
-                    print("is castling")
-                    if new_file > curr_file: #kingside
-                        if board.turn:
-                            game.move("h1f1")
-                        else:
-                            game.move("h8f8")
-                    else: #queenside
-                        if board.turn:
-                            game.move("a1d1")
-                        else:
-                            game.move("a8d8")
-                
-                #moves piece
-                game.pieces[selected_piece].img.pos = new_pos   
-                game.pieces[new_uci_pos] = game.pieces[selected_piece]    
-                del game.pieces[selected_piece] 
                 selected_piece = None
                 select_layer.Queue = []
-                ui.MainRenderQueue.Push(game.pieces[new_uci_pos].img) 
+                ui.MainRenderQueue.Push(game.pieces[new_uci_pos].img) #adds piece back to mainrenderqueue
                 game.last_move = new_uci_pos
+            
             
         else:
             selected_piece = game.select_piece(window.mousepos)
