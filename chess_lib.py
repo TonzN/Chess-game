@@ -65,7 +65,8 @@ class Game:
         self.pieces[new_uci] = self.pieces[curr_uci]
         self.pieces[new_uci].img.pos = self.Positions[new_uci]
         del self.pieces[curr_uci]
-        def capture(self, board, uci_move, new_uci_pos):
+        
+    def capture(self, board, uci_move, new_uci_pos):
         if board.piece_at(uci_move.to_square):
             ui.MainRenderQueue.Remove(self.pieces[new_uci_pos].img)
             del self.pieces[new_uci_pos]
