@@ -77,3 +77,19 @@ while run:
         game.follow_cursor(selected_piece, window.mousepos)
         
     if move: #BACKEND
+        uci_move = chess.Move.from_uci(move)
+        board.push(uci_move)
+        move = None
+        print(board)
+        
+        if board.is_stalemate():
+            print("Stalemate")
+            ui.endPygame()
+        
+        if board.is_checkmate():
+            if board.turn:
+                print("Black won")
+            else:
+                print("White won")
+                
+            ui.endPygame()
