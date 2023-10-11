@@ -1,72 +1,45 @@
-import chess_lib as cl
-import chess 
-import opening_database
-import time
+import chess_lib
 
-piece_values = {
-    "pawn": 1,
-    "knight": 3,
-    "bishop": 3,
-    "rook": 5,
-    "queen": 9,
-}
-
-game_vars = {
-    "in_opening": True,
-    "opening_move": None
-}
-
-opening_moves = []
-
-white_material = 0
-black_material = 0
-
-white_captured_pieces = []
-black_captured_pieces = []
-
-opening_database = {
-    "ruy_lopez": opening_database.Ruy_lopez
-}
-
-class node:
-    def __init__(self):
-        self.value = None
-        self.left = None
-        self.right = None
+class Node:
+    def __init__(self, move, piece_type = ""):
+        self.move = move
+        self.values = {
+            "description": {"open_game": True}   
+        }
+        self.children = {}
+        self.piece_type = piece_type
         
-def opening_eval(last_move):
-    opening_moves.append(last_move)
-    if not game_vars["opening_move"]:
-        game_vars["opening_move"] = last_move
-    #Kings pawn openings--------------------------------
-    #---------------RUY LOPEZ-----------------#
-    ruy_lopez_start = opening_database["ruy_lopez"].root
-    next_move = ruy_lopez_start
-    for i in opening_moves:
-        if i in next_move.children:
-            next_move = next_move.children[i]
-        else:
-            next_move = None
-            break
-    
-    if next_move:
-        if next_move.move == last_move:
-            next_move = None
-        else:
-            opening_moves.append(next_move.move)
-        
-    return next_move
+    def print_tree(self, depth=0):
+        indentation = "  " * depth
+        print(f"{indentation}{self.move} {self.piece_type}{self.move[2:]}")
+        for child in self.children.values():
+            child.print_tree(depth + 1)
 
-        
-def run(last_move):
-    move = None
-    if game_vars["in_opening"]:
-        time.sleep(0.2)
-        
-        move = opening_eval(last_move)
-        if not move:
-            game_vars["in_opening"] = False
-            
-    #start engine
-            
-    return move#Returns a move
+class Tree:
+    def __init__(self, move):
+        self.root = Node(move)
+
+##################################||||RUY LOPEZ||||#############################################33
+Ruy_lopez = Tree("e2e4")
+Ruy_lopez.root.children["e2e4"] = Node("e7e5")
+Ruy_lopez.root.children["e2e4"].children["e7e5"] = Node("g1f3", "Kn")
+Ruy_lopez.root.children["e2e4"].children["e7e5"].children["g1f3"] = Node("b8c6", "Kn")
+Ruy_lopez.root.children["e2e4"].children["e7e5"].children["g1f3"].children["b8c6"] = Node("f1b5", "B")
+Ruy_lopez_position = Ruy_lopez.root.children["e2e4"].children["e7e5"].children["g1f3"].children["b8c6"] 
+
+##################################||||Vienna game||||#############################################
+vienna_game = Tree("e2e4")
+vienna_game.root.children["e2e4"] = Node("e7e5")
+vienna_game.root.children["e2e4"].children["e7e5"] = Node("b1c3", "Kn")
+vienna_game.root.children["e2e4"].children["e7e5"].children["b1c3"] = Node("g8f6", "Kn")
+vienna_game.root.children["e2e4"].children["e7e5"].children["b1c3"].children["g8f6"] = Node("f2f4")
+vienna_game.root.children["e2e4"].children["e7e5"].children["b1c3"].children["g8f6"].children["f2f4"] = Node("d7d5")
+vienna_game = vienna_game.root.children["e2e4"].children["e7e5"].children["b1c3"].children["g8f6"]
+
+################################||||Queens gambit||||###############################################
+queens_gambit = Tree("d2d4")
+queens_gambit.root.children["d2d4"] = Node("d7d5")
+queens_gambit.root.children["d2d4"].children["d7d5"] = Node("c2c4")
+#queens_gambit.root.children["e2e4"].children["e7e5"].children["b1c3"] = Node("g8f6", "Kn")
+
+queens_gambit = queens_gambit.root.children["d2d4"].children["d7d5"]
