@@ -58,7 +58,6 @@ while run:
                 ui.MainRenderQueue.Push(game.pieces[new_uci_pos].img) #adds piece back to mainrenderqueue
                 game.last_move = new_uci_pos
             
-            
         else:
             selected_piece = game.select_piece(window.mousepos)
     
