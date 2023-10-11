@@ -65,7 +65,32 @@ class Game:
         self.pieces[new_uci] = self.pieces[curr_uci]
         self.pieces[new_uci].img.pos = self.Positions[new_uci]
         del self.pieces[curr_uci]
-    
+        def capture(self, board, uci_move, new_uci_pos):
+        if board.piece_at(uci_move.to_square):
+            ui.MainRenderQueue.Remove(self.pieces[new_uci_pos].img)
+            del self.pieces[new_uci_pos]
+            
+    def en_passant(self, board, uci):
+        if board.is_en_passant(uci):
+            ui.MainRenderQueue.Remove(self.pieces[self.last_move].img)
+     
+    def castle(self, board, uci_move):
+        if board.is_castling(uci_move):
+            new_file = flipped_files[str(uci_move)[2]]
+            curr_file = flipped_files[str(uci_move)[0]]
+            #castling dir
+            print("is castling")
+            if new_file > curr_file: #kingside
+                if board.turn:
+                    self.move("h1f1")
+                else:
+                    self.move("h8f8")
+            else: #queenside
+                if board.turn:
+                    self.move("a1d1")
+                else:
+                    self.move("a8d8")
+                    
     def grid_pos_to_uci(self, pos):
         if self.flipped_board:
             x = pos[1]
