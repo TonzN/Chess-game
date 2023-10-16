@@ -123,9 +123,10 @@ def main_opening_search(last_move):
         else:
             opening_moves.append(selected_move.move)
             
-    return selected_move
+    return selected_move #selected uci move
 
-
+def eval():
+    pass
        
 def run(last_move):
     move = None
@@ -135,6 +136,11 @@ def run(last_move):
         move = main_opening_search(last_move)
         if not move:
             game_vars["in_opening"] = False
+            
+    #start engine
+            
+    return move#Returns a move
+
             
     #start engine
             
