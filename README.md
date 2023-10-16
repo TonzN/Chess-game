@@ -8,4 +8,4 @@ No animations im too lazy for that.
 
 Can flip the board by adjusting setup parameter flipped_board to true. 
 
-Hane not added pawn promotions yet. 
+Have not added pawn promotions yet. 
