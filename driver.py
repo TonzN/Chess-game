@@ -1,6 +1,9 @@
 import ui
 import chess_lib as cl
 import chess
+import engine
+import time
+import opening_database
 #DEMO
 
 window = ui.NewWindow()
@@ -19,6 +22,7 @@ game = cl.Game(screen)
 game.setup(grid.grid, 60, False)
 game.loadPawns()
 game.loadPieces()
+engine.game_vars["debug_move"] = False
 
 select_layer = ui.RenderQueue()
 
@@ -28,9 +32,23 @@ new_turn = False
 
 #backend game vars
 move = None
+player = True
 
 while run:
     window.NextFrame([select_layer])
+    if not player == board.turn:
+        move = engine.run(game.last_move_uci)
+        if move:
+            uci_move = chess.Move.from_uci(move.move)
+            game.capture(board, uci_move, move.move[2:])
+            game.castle(board, uci_move)
+            game.en_passant(board, uci_move)
+            game.move(move.move)
+            game.last_move = move.move[:2]
+            
+            board.push(uci_move)
+            game.last_move_uci = uci_move
+            move = None
     
     if window.leftclick() == True: #Select
         if selected_piece: 
@@ -43,7 +61,7 @@ while run:
                 if selected_piece+new_uci_pos == str(i):
                     is_legal_move = True
             
-           if is_legal_move == True: 
+            if is_legal_move == True: 
                 move = selected_piece+new_uci_pos  #assigns move   
                 uci_move = chess.Move.from_uci(move)    
                
@@ -57,6 +75,7 @@ while run:
                 select_layer.Queue = []
                 ui.MainRenderQueue.Push(game.pieces[new_uci_pos].img) #adds piece back to mainrenderqueue
                 game.last_move = new_uci_pos
+                game.last_move_uci = move
             
         else:
             selected_piece = game.select_piece(window.mousepos)
@@ -80,8 +99,21 @@ while run:
         uci_move = chess.Move.from_uci(move)
         board.push(uci_move)
         move = None
-        print(board)
+        if game.debugMode:
+            print(board)
         
+        white_material = engine.white_material
+        black_material = engine.black_material
+        print("\nWhite captured material {white} | Black captured material {black}".format(white = white_material, black = black_material))
+        
+        if white_material > black_material:
+            print("\n White: +{advantage}".format(advantage=white_material-black_material))
+        elif black_material > white_material:
+            print("\n Black: +{advantage}".format(advantage=black_material-white_material))
+        
+        print("\nWhite captured pieces: ", engine.white_captured_pieces)
+        print("Black captured pieces: ", engine.black_captured_pieces)
+            
         if board.is_stalemate():
             print("Stalemate")
             ui.endPygame()
