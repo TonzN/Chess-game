@@ -275,15 +275,16 @@ class grid:
             (255,255,255),
             (222,184,135)
         ]
+        self.size = size
         self.pattern = pattern
         self.cellSize = cellsize
         self.border = False 
         self.borderThickness = 2 
         self.spacing = 0 #spacing between each cell
         self.borderColor = (20,20,20)
-        self._screenW = int(np.floor(size[0]/cellsize))
-        self._screenH = int(np.floor(size[1]/cellsize))
-        self._pos = np.zeros((self._screenW, self._screenH))
+        self._gridW = int(np.floor(size[0]/cellsize))
+        self._gridH = int(np.floor(size[1]/cellsize))
+        self._pos = np.zeros((self._gridW, self._gridH))
         self.renderqueue = MainRenderQueue
         self.rounded_edges = False
         self.render = True
@@ -295,15 +296,39 @@ class grid:
 
         self.regionColorHistory = {}  #Access regions color history
 
-    def generate(self, screen, type = "Button", textdata = None):
-        for i in range(self._screenH):
-            for z in range(self._screenW):
+    def generate(self, screen, type = "Button", textdata = None): #for entire screens
+        for i in range(self._gridH):
+            for z in range(self._gridW):
                 color = self.colors[0]
                 if (i+z)%2==0 and self.pattern == True: #makes checker patternsS
                     color = self.colors[1]
 
                #Type = Button
                 block = Button(screen, z*self.cellSize + (1+z)*self.spacing, i*self.cellSize + (1+i)*self.spacing, self.cellSize, self.cellSize, color, color)
+                block.Render = self.render
+                if self.border:
+                    block.Border = True
+                    block.BorderColor = self.borderColor
+                    block.borderThickness = self.borderThickness
+
+                if self.rounded_edges:
+                    block.rounded_edges = True
+        
+                if type == "TextButton":
+                    block.AddText(textdata[0], textdata[1], textdata[2])
+
+            
+                self.grid[i].append(block)
+                
+    def generate_at(self, position, screen, type="Button", textdata = None):
+        for i in range(self._gridH):
+            for z in range(self._gridW):
+                color = self.colors[0]
+                if (i+z)%2==0 and self.pattern == True: #makes checker patternsS
+                    color = self.colors[1]
+
+                       #Type = Button
+                block = Button(screen, position[0]+z*self.cellSize + (1+z)*self.spacing, position[1]+i*self.cellSize + (1+i)*self.spacing, self.cellSize, self.cellSize, color, color)
                 block.Render = self.render
                 if self.border:
                     block.Border = True
@@ -328,7 +353,6 @@ class grid:
     def colorBlock(self, pos, colour): #pos gotta be the indexes of the grid formated in a tuple
         self.grid[pos[1]][pos[0]].c1 = colour
 
-
     def refreshColours(self):
         for region in self.colorHistory:
           for x in range(region[1][0], region[1][1]): #Y axis
@@ -350,3 +374,9 @@ class grid:
         empty_grid = np.zeros((len(self.grid[0]), len(self.grid)))
                    
         return empty_grid
+    
+    def delete_obj(self):
+        for i in range(len(self.grid)):
+            for z in range(len(self.grid[i])):
+                MainRenderQueue.Remove(self.grid[i][z])
+                
