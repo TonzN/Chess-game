@@ -33,6 +33,15 @@ new_turn = False
 #backend game vars
 move = None
 player = True
+promotion = False
+
+promotion_table = {
+    "queen": "q",
+    "rook": "r",
+    "knight": "n",
+    "bishop": "b"
+}
+selected_promotion = False
 
 while run:
     window.NextFrame([select_layer])
@@ -60,25 +69,41 @@ while run:
             for i in legal_moves:
                 if selected_piece+new_uci_pos == str(i):
                     is_legal_move = True
+                elif game.promoteable(board, new_uci_pos, game.pieces[selected_piece].piece_type):
+                    is_legal_move = True
             
             if is_legal_move == True: 
                 move = selected_piece+new_uci_pos  #assigns move   
                 uci_move = chess.Move.from_uci(move)    
-               
                 #checks what kind of move you did
                 game.capture(board, uci_move, new_uci_pos)
                 game.en_passant(board, uci_move)          
                 game.castle(board, uci_move)
                 game.move(move)
+                promotion_data = game.pawn_promotion(board, uci_move, move, game.pieces[new_uci_pos].piece_type)
                 
                 selected_piece = None
                 select_layer.Queue = []
-                ui.MainRenderQueue.Push(game.pieces[new_uci_pos].img) #adds piece back to mainrenderqueue
+                if not promotion_data:
+                    ui.MainRenderQueue.Push(game.pieces[new_uci_pos].img) #adds piece back to mainrenderqueue
+                else:
+                    promotion = promotion_data
                 game.last_move = new_uci_pos
                 game.last_move_uci = move
             
-        else:
+        elif not promotion:
             selected_piece = game.select_piece(window.mousepos)
+        
+        elif promotion:
+            grid = promotion[0].grid
+            for piece in range(4):
+                if grid[piece][0].Click(True):
+                    selected_promotion = [promotion_table[promotion[1][piece].piece_type], promotion[1][piece]]
+                    
+            if selected_promotion:
+                promotion[0].delete_obj()
+                for i in promotion[1]:
+                    ui.MainRenderQueue.Remove(i.img)
     
     if window.rightclick() == True and selected_piece: #Deselect
         #Snapback piece to original position
@@ -94,8 +119,23 @@ while run:
             select_layer.Push(game.pieces[selected_piece].img)
         
         game.follow_cursor(selected_piece, window.mousepos)
+    
+    if selected_promotion:
+        if board.turn:
+            team = "white"
+        else:
+            team = "black"
+        promotion_move = chess.Move.from_uci(game.last_move_uci+selected_promotion[0]) 
+        board.push(promotion_move) 
+        game.pieces[game.last_move] =  cl.Piece(team, selected_promotion[1].piece_type, game.last_move, game.Positions[game.last_move], screen)
+        selected_promotion = None
+        promotion = None
+        move = None
+        selected_piece = None
+        select_layer.Queue = []
+
         
-    if move: #BACKEND
+    if move and not promotion: #BACKEND
         uci_move = chess.Move.from_uci(move)
         board.push(uci_move)
         move = None
@@ -113,7 +153,10 @@ while run:
         
         print("\nWhite captured pieces: ", engine.white_captured_pieces)
         print("Black captured pieces: ", engine.black_captured_pieces)
-            
+        if board.is_repetition():
+            print("repetition")
+            ui.endPygame()
+                        
         if board.is_stalemate():
             print("Stalemate")
             ui.endPygame()
