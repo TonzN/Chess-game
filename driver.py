@@ -15,6 +15,7 @@ window.Target_fps = 60
 screen = window.screen
 
 board = chess.Board()
+engine.game_vars["board"] = board
 
 grid = ui.grid(window_size, 60)
 grid.generate(screen)
@@ -27,7 +28,6 @@ engine.game_vars["debug_move"] = False
 engine.game_vars["game"] = game
 
 select_layer = ui.RenderQueue()
-
 run = True
 selected_piece = None
 new_turn = False
@@ -50,25 +50,23 @@ while run:
     window.NextFrame([select_layer])
     if not player == board.turn:
         move = engine.run(game.last_move_uci, board)
-        
+        engine.transposition_table = {}
         if move:
             if board.is_check():
                 engine.game_vars["is_check"] = True
             else:
                 engine.game_vars["is_check"] = False
-                
-            uci_move = chess.Move.from_uci(move.move)
-            game.capture(board, uci_move, move.move[2:])
-            game.castle(board, uci_move)
+            uci_move = chess.Move.from_uci(move)
+            game.capture(board, uci_move, move[2:])
             game.en_passant(board, uci_move)
-            game.move(move.move)
-            game.last_move = move.move[:2]
+            game.move(move)
+            game.last_move = move[:2]
             
-            board.push(uci_move)
+            board.push(chess.Move.from_uci(move))   
             engine.played_moves.append(uci_move)
             game.last_move_uci = uci_move   
             move = None
-            engine.pre_compute(board)
+            engine.pre_compute(board, -1)
             print("\nEngine eval", engine.eval(board), "Color:", board.turn)
     
     if window.leftclick() == True: #Select
@@ -170,7 +168,7 @@ while run:
         
         if enable_eval:
             team_legal_moves = []
-            engine.pre_compute(board)
+            engine.pre_compute(board, -1)
             print("\nPlayer eval:", engine.eval(board), "Color:",board.turn)
            
         if board.is_repetition():
