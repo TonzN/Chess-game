@@ -24,6 +24,13 @@ files = {
     7: "g",
     8: "h",
 }
+
+chess_type_table = {
+    "q": "queen",
+    "r": "rook",
+    "b": "bishop",
+    "n": "knight"
+}
 flipped_files = {value: key for key, value in files.items()}
 
 class Piece():
@@ -75,6 +82,18 @@ class Game:
                     can_promote = True
         
         return can_promote
+    
+    def engine_promotion(self, board, move):
+        from_move = move[:2]
+        to_move = move[2:4]
+        promote_to = move[4]
+        ui.MainRenderQueue.Remove(self.pieces[from_move].img)
+        del self.pieces[from_move]
+        if to_move in self.pieces:
+            ui.MainRenderQueue.Remove(self.pieces[to_move].img)
+            del self.pieces[to_move]
+        team = board.turn == True and "white" or board.turn == False and "black"
+        self.pieces[to_move] = Piece(team, chess_type_table[promote_to], to_move, self.Positions[to_move], self.screen)
         
     def pawn_promotion(self, board, uci_move, move, piece_type):
         grid_pos = self.Positions[move[2:]]
@@ -255,3 +274,4 @@ class Game:
         if self.debugMode == True:
             print("Successfully loaded pieces")
     
+
