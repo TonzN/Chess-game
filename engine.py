@@ -35,7 +35,10 @@ game_vars = {
     "pieces": [[],[]],
     "check_mate": False,
     "start_depth": 4,
-    "positions_ran": 0
+    "positions_ran": 0,
+    "endgame": False,
+    "white_pieces": 18,
+    "black_pieces": 18
 }
 
 center = {
@@ -66,7 +69,8 @@ legal_piece_moves_black = {
 }
 legal_moves_white = {-1: [], 0: [], 1: [], 2: [], 3: [], 4:[], 5: []}
 legal_moves_black = {-1: [], 0: [], 1: [], 2: [], 3: [], 4:[], 5: []}
-
+king_pos_white = [None]
+king_pos_black = [False]
 opening_moves = []
 played_moves = []
 
@@ -78,6 +82,12 @@ black_captured_pieces = []
 
 cached_material_white = {}
 cached_material_black = {}
+king_disadv_squares_in_endgame = {
+    "h8": -2,
+    "h1": -2,
+    "a1": -2,
+    "a8": -2
+}
 
 knight_preffered_positions ={
     "d4": 0.2,
@@ -190,14 +200,20 @@ def main_opening_search(last_move):
 
 def material_count(board, team): #returns material for chosen team 
     material = 0
+    if team:
+        game_vars["white_pieces"] = 0
+    else:
+        game_vars["black_pieces"] = 0
     for square, piece in board.piece_map().items():
         piece = str(piece)
         if piece is not None:
             if piece.isupper() and team == True:
+                game_vars["white_pieces"] += 1
                 material += engine_piece_values[piece.lower()]
             elif piece.islower() and team == False:
+                game_vars["black_pieces"] += 1
                 material += engine_piece_values[piece.lower()]
-                
+
     return material
 
 def pre_compute(board, depth=0):
@@ -211,6 +227,7 @@ def pre_compute(board, depth=0):
     center_pawns_white = {}
     legal_moves_white[depth] = []
     legal_moves_black[depth] = []
+
     for move in list(board.legal_moves):
         piece = board.piece_at(move.from_square)
         move_uci = move.uci()
@@ -221,6 +238,8 @@ def pre_compute(board, depth=0):
         if piece.piece_type == 1:
             if move_uci[:2] == "e4" or "e5" or "d5" or "d4":
                 center_pawns_white[move_uci[:2]] = move_uci[:2]
+        if piece.piece_type == 5:
+            king_pos_white[0] = [piece, move_uci]
     
     board.turn = False
     for move in list(board.legal_moves):
@@ -233,6 +252,8 @@ def pre_compute(board, depth=0):
         if piece.piece_type == 1:
             if move_uci[:2] == "e4" or "e5" or "d5" or "d4":
                 center_pawns_black[move_uci[:2]] = move_uci[:2]
+        if piece.piece_type == 5:
+            king_pos_black[0] = [piece, move_uci]
     
     board.turn = original_turn
            
@@ -243,7 +264,25 @@ def pre_compute(board, depth=0):
             game_vars["pieces"][0].append(piece)
         else:
             game_vars["pieces"][1].append(piece) 
-    
+
+def king_positional_endgame_score(king_square, other_king_square):
+    score = 0
+    k_move = chess.Move.from_uci(other_king_square)
+    file_of_square = chess.square_file(k_move.from_square)
+    rank_of_square = chess.square_rank(k_move.from_square)
+    file_dis_to_center = max(3-file_of_square, file_of_square-4)
+    rank_dis_to_center = max(3-rank_of_square, rank_of_square-4)
+    score += file_dis_to_center + rank_dis_to_center
+
+    friendly_k_move = chess.Move.from_uci(king_square)
+    friendly_file_of_square = chess.square_file(friendly_k_move.from_square)
+    friendly_rank_of_square = chess.square_rank(friendly_k_move.from_square)
+    dis_between_file = abs(friendly_file_of_square-file_of_square)
+    dis_between_rank = abs(friendly_rank_of_square-rank_of_square)
+    score += 2 - ((dis_between_file + dis_between_rank)/4)
+
+    return score
+
 def mobility(board, team, depth):
     mobility_score = 0
     legal_moves = legal_piece_moves_white
@@ -268,6 +307,18 @@ def mobility(board, team, depth):
         mobility_score += 0.035 * len(legal_moves[4])
         
     mobility_score += 0.045 * len(legal_moves[5])
+
+    if game_vars["endgame"] == True:
+        if board.turn:
+            king_square = king_pos_white[0][1]
+            if king_square in king_disadv_squares_in_endgame:
+                mobility_score += king_disadv_squares_in_endgame[king_square]
+            mobility_score += king_positional_endgame_score(king_square, king_pos_black[0][1])
+        else:
+            king_square = king_pos_black[0][1]
+            if king_square in king_disadv_squares_in_endgame:
+                mobility_score += king_disadv_squares_in_endgame[king_square]
+            mobility_score += king_positional_endgame_score(king_square, king_pos_white[0][1])
    # mobility_score += 0.0 * legal_moves[6]
     
     return mobility_score
@@ -280,7 +331,7 @@ def eval(board, depth=0):
      
     material_white = 0
     material_black = 0
-    
+
     #cached material }
     if not len_pieces in cached_material_white or not len_pieces in cached_material_black:
         material_white = material_count(board, True)
@@ -291,6 +342,9 @@ def eval(board, depth=0):
     else:
         material_white = material_count(board, True)
         material_black = material_count(board, False)
+
+    if len_pieces < 8 or game_vars["white_pieces"] < 5 or game_vars["black_pieces"] < 5:
+        game_vars["endgame"] = True
       
     mobility_white = mobility(board,True, depth)
     mobility_black = mobility(board, False, depth)
