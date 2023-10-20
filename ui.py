@@ -1,3 +1,4 @@
+
 import pygame
 import math
 import random
@@ -379,4 +380,6 @@ class grid:
         for i in range(len(self.grid)):
             for z in range(len(self.grid[i])):
                 MainRenderQueue.Remove(self.grid[i][z])
+                
+
                 
