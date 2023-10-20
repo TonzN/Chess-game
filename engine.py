@@ -445,8 +445,8 @@ def run(last_move, board):
         #eval(board, -1)
         #check()    
     
-    time_taken = timeit.timeit(code_to_time, number=100 )
-    print("Elapsed time:", time_taken, "seconds")
+   # time_taken = timeit.timeit(code_to_time, number=100 )
+  #  print("Elapsed time:", time_taken, "seconds")
     eval(board) *-1 #no move has been pushed, flips
 
     #start engine
