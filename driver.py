@@ -57,9 +57,14 @@ while run:
             else:
                 engine.game_vars["is_check"] = False
             uci_move = chess.Move.from_uci(move)
-            game.capture(board, uci_move, move[2:])
+            game.capture(board, uci_move, move[2:4])
             game.en_passant(board, uci_move)
-            game.move(move)
+
+            if len(move) == 5:
+                game.engine_promotion(board, move)
+            else:
+                game.move(move)
+
             game.last_move = move[:2]
             
             board.push(chess.Move.from_uci(move))   
@@ -68,6 +73,23 @@ while run:
             move = None
             engine.pre_compute(board, -1)
             print("\nEngine eval", engine.eval(board), "Color:", board.turn)
+
+            if board.is_repetition():
+                print("repetition")
+                ui.endPygame()
+                        
+            if board.is_stalemate():
+                print("Stalemate")
+                ui.endPygame()
+            
+            if board.is_checkmate():
+                if board.turn:
+                    print("Black won")
+                else:
+                    print("White won")
+                    
+                ui.endPygame()
+
     
     if window.leftclick() == True: #Select
         if selected_piece: 
@@ -186,3 +208,4 @@ while run:
                 print("White won")
                 
             ui.endPygame()
+
