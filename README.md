@@ -1,5 +1,4 @@
 # Chess-game
-Playable chess game engine soon to come
 
 Requires pygame to be installed
 
